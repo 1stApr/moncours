@@ -1,0 +1,14 @@
+[DEFAULT]
+interface_driver = linuxbridge
+
+
+[agent]
+extensions = fwaas_v2,vpnaas
+
+
+[network_log]
+[ovs]
+
+[vpnagent]
+vpn_device_driver = neutron_vpnaas.services.vpn.device_drivers.strongswan_ipsec.StrongSwanDriver
+

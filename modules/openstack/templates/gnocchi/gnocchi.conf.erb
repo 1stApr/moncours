@@ -1,0 +1,49 @@
+[DEFAULT]
+log_dir = <%= @logs_dir %>/<%= @service %>
+
+
+[api]
+auth_mode = keystone
+
+
+[archive_policy]
+
+
+[cors]
+allowed_origin = http://<%= @management_ip %>
+
+
+[healthcheck]
+[incoming]
+
+
+[indexer]
+url = mysql+pymysql://<%= @service %>:<%= @password %>@<%= @dbhost %>/<%= @service %>?charset=utf8
+
+
+[keystone_authtoken]
+#cafile = /opt/stack/data/ca-bundle.pem
+project_domain_name = Default
+project_name = service
+user_domain_name = Default
+username = <%= @service %>
+password = <%= @password %>
+auth_url = http://<%= @management_ip %>/identity
+www_authenticate_uri = http://<%= @management_ip %>/identity
+auth_type = password
+memcached_servers = <%= @memcached_ip %>:11211
+region_name = <%= @region %>
+service_token_roles_required = True
+
+
+[metricd]
+workers = 1
+
+[oslo_middleware]
+[oslo_policy]
+[statsd]
+
+
+[storage]
+file_basepath = <%= @service_dir %>/<%= @service %>
+driver = file

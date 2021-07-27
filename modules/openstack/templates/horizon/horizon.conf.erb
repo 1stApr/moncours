@@ -1,0 +1,42 @@
+<VirtualHost *:<%= @port %>>
+    WSGIScriptAlias /dashboard <%= @service_dir %>/<%= @service %>/openstack_dashboard/wsgi.py
+    WSGIDaemonProcess horizon user=<%= @service %> group=<%= @service %> processes=2 threads=2 home=<%= @service_dir %>/<%= @service %> display-name=%{GROUP}
+    WSGIApplicationGroup %{GLOBAL}
+
+    SetEnv APACHE_RUN_USER <%= @service %>
+    SetEnv APACHE_RUN_GROUP <%= @service %>
+    WSGIProcessGroup horizon
+
+    DocumentRoot <%= @service_dir %>/<%= @service %>/.blackhole/
+    Alias /dashboard/media <%= @service_dir %>/<%= @service %>/openstack_dashboard/static
+    Alias /dashboard/static <%= @service_dir %>/<%= @service %>/static
+
+    RedirectMatch "^/$" "/dashboard/"
+
+    <Directory />
+        Options FollowSymLinks
+        AllowOverride None
+    </Directory>
+
+    <Directory <%= @service_dir %>/<%= @service %>>
+        Options Indexes FollowSymLinks MultiViews
+        AllowOverride None
+        # Apache 2.4 uses mod_authz_host for access control now (instead of
+        #  "Allow")
+        <IfVersion < 2.4>
+            Order allow,deny
+            Allow from all
+        </IfVersion>
+        <IfVersion >= 2.4>
+            Require all granted
+        </IfVersion>
+    </Directory>
+    <IfVersion >= 2.4>
+      ErrorLogFormat "%{cu}t %M"
+    </IfVersion>
+    ErrorLog /var/log/apache2/horizon_error.log
+    LogLevel warn
+    CustomLog /var/log/apache2/horizon_access.log combined
+</VirtualHost>
+
+WSGISocketPrefix /var/run/apache2

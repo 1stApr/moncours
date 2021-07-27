@@ -1,0 +1,67 @@
+[DEFAULT]
+vif_plugging_timeout = 300
+vif_plugging_is_fatal = True
+firewall_driver = nova.virt.firewall.NoopFirewallDriver
+use_neutron = true
+force_config_drive = true
+
+transport_url = rabbit://<%= @service %>:<%= @password %>@<%= @rabbitmq_ip %>:5672/nova_cell1
+
+enabled_apis = osapi_compute,metadata
+metadata_host = <%= @management_ip %>
+metadata_listen = <%= @management_ip %>
+metadata_listen_port = <%= @nova_port_meta %>
+metadata_workers = 2
+
+log_dir = <%= @logs_dir %>/<%= @service %>
+
+
+[api]
+auth_strategy = keystone
+metadata_cache_expiration = 15
+use_forwarded_for = False
+local_metadata_per_cell = True
+
+
+[database]
+connection = mysql+pymysql://<%= @service %>:<%= @password %>@<%= @dbhost %>/<%= @service %>_cell1?charset=utf8
+
+
+[conductor]
+workers = 2
+
+
+[placement]
+region_name = <%= @region %>
+project_domain_name = Default
+project_name = service
+auth_type = password
+user_domain_name = Default
+auth_url = http://<%= @management_ip %>/identity
+username = placement
+password = <%= @password %>
+
+
+[spice]
+agent_enabled = False
+enabled = true
+server_listen = <%= @management_ip %>
+server_proxyclient_address = <%= @management_ip %>
+html5proxy_base_url = http://<%= @public_ip %>:6082/spice_auto.html
+html5proxy_host = 0.0.0.0
+html5proxy_port = 6082
+keymap = en-us
+
+
+[neutron]
+service_metadata_proxy = true
+metadata_proxy_shared_secret = <%= @metadata_secret %>
+region_name = <%= @region %>
+auth_strategy = keystone
+project_domain_name = default
+project_name = service
+user_domain_name = default
+username = neutron
+password = <%= @password %>
+auth_url = http://<%= @management_ip %>/identity
+auth_type = password

@@ -1,0 +1,127 @@
+# https://docs.openstack.org/cinder/train/configuration/block-storage/samples/cinder.conf.html
+#
+[DEFAULT]
+public_endpoint = http://<%=  @management_ip %>/volume
+transport_url = rabbit://<%= @service %>:<%= @password %>@<%= @rabbitmq_ip %>:5672/
+state_path = <%= @service_dir %>/<%= @service %>
+
+auth_strategy = keystone
+
+my_ip = <%= @management_ip %>
+
+osapi_volume_workers = 2
+osapi_volume_listen = <%= @management_ip %>
+osapi_volume_extension = cinder.api.contrib.standard_extensions
+
+glance_api_version = 2
+glance_api_servers = http://<%= @management_ip %>/image
+
+<% if @nfs -%>
+enabled_backends = nfs
+default_volume_type = nfs
+
+backup_driver = cinder.backup.drivers.nfs.NFSBackupDriver
+backup_compression_algorithm = zlib
+backup_sha_block_size_bytes = 32768
+backup_file_size = 1999994880
+backup_share = <%= @management_ip %>:<%= @backup %>
+backup_mount_point_base = <%= @service_dir %>/<%= @service %>/backups
+#backup_mount_options = <None>
+<% end -%>
+
+rootwrap_config = /etc/cinder/rootwrap.conf
+api_paste_config = /etc/cinder/api-paste.ini
+
+log_dir = <%= @logs_dir %>/<%= @service %>
+
+
+[backend]
+
+
+[backend_defaults]
+
+
+<% if @nfs -%>
+[nfs]
+nfs_shares_config = /etc/cinder/nfs_shares
+nfs_mount_point_base = <%= @service_dir %>/<%= @service %>/volumes         
+#nfs_mount_options = vers4
+nfs_sparsed_volumes = true
+volume_driver = cinder.volume.drivers.nfs.NfsDriver
+volume_backend_name = nfs
+<% end -%>
+
+
+[barbican]
+[brcd_fabric_example]
+[cisco_fabric_example]
+[coordination]
+
+
+[cors]
+allowed_origin = http://<%= @management_ip %>
+
+
+[database]
+connection = mysql+pymysql://<%= @service %>:<%= @password %>@<%= @dbhost %>/<%= @service %>?charset=utf8
+
+
+[fc-zone-manager]
+[healthcheck]
+[key_manager]
+
+
+[keystone_authtoken]
+#cafile = /opt/stack/data/ca-bundle.pem
+project_domain_name = Default
+project_name = service
+user_domain_name = Default
+username = <%= @service %>
+password = <%= @password %>
+auth_url = http://<%= @management_ip %>/identity
+www_authenticate_uri = http://<%= @management_ip %>/identity
+auth_type = password
+memcached_servers = <%= @memcached_ip %>:11211
+region_name = <%= @region %>
+service_token_roles_required = True
+
+
+[nova]
+# cafile = /opt/stack/data/ca-bundle.pem
+region_name = <%= @region %>
+memcached_servers = <%= @memcached_ip %>:11211
+project_domain_name = Default
+project_name = service
+user_domain_name = Default
+password = <%= @password %>
+username = nova
+auth_url = http://<%= @management_ip %>/identity
+auth_type = password
+
+
+[oslo_concurrency]
+lock_path = <%= @service_dir %>/<%= @service %>/tmp
+
+
+[oslo_messaging_amqp]
+[oslo_messaging_kafka]
+
+
+[oslo_messaging_notifications]
+driver = messagingv2
+
+
+[oslo_messaging_rabbit]
+[oslo_middleware]
+[oslo_policy]
+[oslo_reports]
+[oslo_versionedobjects]
+[privsep]
+[profiler]
+[sample_castellan_source]
+[sample_remote_file_source]
+[service_user]
+[ssl]
+[vault]
+#use_ssl = false
+

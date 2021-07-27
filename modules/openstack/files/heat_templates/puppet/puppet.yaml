@@ -1,0 +1,68 @@
+heat_template_version: 2018-08-31
+description: >
+  Example template how to deploy instance with Puppet 
+  based on role defined in instance metatags
+
+
+parameters:
+  network:
+    type: string
+    description: Existed network to attach instance
+    default: infrastructure
+  subnet:
+    type: string
+    description: Subnet name
+    default: infr-subnet
+  image:
+    type: string
+    default: debian-10.3.0-amd64
+  flavor:
+    type: string
+    default: medium
+  key_name:
+    type: string
+    description: SSH key name 
+    default: alex
+  role:
+    type: string
+    description: Puppet role to deploy on this instance
+    constraints: 
+      - allowed_values: [ foo, bar ]
+        description: Puppet manifest has actions only for role 'foo' and role 'bar'
+    default: foo
+
+
+resources:
+  port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: network }
+      security_groups: [ basic ]
+      fixed_ips: 
+      - subnet_id: { get_param: subnet }
+
+  server:
+    type: OS::Nova::Server
+    properties:
+      # compose instance name from 'puppet_' prefix
+      # and number from last octet of instance IP address
+      name: 
+        list_join: ['', ["puppet_", str_split: ['.', get_attr: [port, fixed_ips, 0, ip_address], 3]]]
+      image: { get_param: image}
+      flavor: { get_param: flavor}
+      key_name: { get_param: key_name }
+      metadata: { "puppet_role": { get_param: role} }            
+      networks:
+        - port: { get_resource: port }   
+      user_data_format: RAW
+      user_data:
+        get_file: puppet.cloud-init 
+
+
+outputs:
+  instance_name:
+    description: Name of the instance.
+    value: { get_attr: [ server, name ] }
+  instance_ip:
+    description: IP address of the instance.
+    value: { get_attr: [ server, first_address ] }

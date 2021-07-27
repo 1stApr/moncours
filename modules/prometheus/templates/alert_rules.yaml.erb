@@ -1,0 +1,15 @@
+groups:
+  - name: High Network Utilization
+    rules:
+    - alert: HighBandwith
+      expr: rate(node_network_receive_bytes_total{device="ens3"}[1m])/1024/1024 > 1.0
+      for: 1m
+      labels:
+        severity: upscale
+        tenant_stack_id: "{{ $labels.tenant_stack_id }}"
+        tenant_project_id: "{{ $labels.tenant_project_id }}"
+        tenant_stack_name: "{{ $labels.tenant_stack_name }}"
+      annotations:
+        summary: High instance network utilization alert to trigger Heat upscaling
+
+        

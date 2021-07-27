@@ -1,0 +1,219 @@
+# https://docs.openstack.org/nova/train/configuration/sample-config.html
+[DEFAULT]
+transport_url = rabbit://<%= @service %>:<%= @password %>@<%= @rabbitmq_ip %>:5672/
+
+my_ip = <%= @management_ip %>
+
+vif_plugging_timeout = 300
+vif_plugging_is_fatal = true
+use_neutron = true
+firewall_driver = nova.virt.firewall.NoopFirewallDriver
+
+compute_driver = libvirt.LibvirtDriver
+
+force_config_drive = true
+default_ephemeral_format = ext4
+pointer_model = ps2mouse
+graceful_shutdown_timeout = 5
+
+instances_path = <%= @service_dir %>/nova/instances
+state_path = <%= @service_dir %>/nova
+
+enabled_apis = osapi_compute,metadata
+shutdown_timeout = 0
+osapi_compute_listen = 0.0.0.0
+osapi_compute_workers = 2
+allow_resize_to_same_host = true
+instance_name_template = instance-%08x
+
+instance_usage_audit = True
+instance_usage_audit_period = hour
+
+rootwrap_config = /etc/nova/rootwrap.conf
+
+log_dir = <%= @logs_dir %>/<%= @service %>
+
+
+[api]
+auth_strategy = keystone
+
+
+[api_database]
+connection = mysql+pymysql://<%= @service %>:<%= @password %>@<%= @dbhost %>/<%= @service %>_api?charset=utf8
+
+
+[barbican]
+
+
+[cache]
+memcache_servers = <%= @memcached_ip %>:11211
+backend = dogpile.cache.memcached
+enabled = true
+
+
+[cinder]
+os_region_name = <%= @region %>
+
+
+[compute]
+
+
+[conductor]
+workers = 2
+
+
+[console]
+[consoleauth]
+
+
+[cors]
+allowed_origin = http://<%= @management_ip %>
+
+
+[database]
+connection = mysql+pymysql://<%= @service %>:<%= @password %>@<%= @dbhost %>/<%= @service %>_cell0?charset=utf8
+
+
+[devices]
+[ephemeral_storage_encryption]
+
+
+[filter_scheduler]
+track_instance_changes = False
+enabled_filters = AvailabilityZoneFilter,ComputeFilter,ComputeCapabilitiesFilter,ImagePropertiesFilter,ServerGroupAntiAffinityFilter,ServerGroupAffinityFilter,SameHostFilter,DifferentHostFilter
+
+
+[glance]
+api_servers = http://<%= @management_ip %>/image
+
+
+[guestfs]
+[healthcheck]
+[hyperv]
+[ironic]
+[key_manager]
+[keystone]
+
+
+[keystone_authtoken]
+#cafile = /opt/stack/data/ca-bundle.pem
+project_domain_name = Default
+project_name = service
+user_domain_name = Default
+username = <%= @service %>
+password = <%= @password %>
+auth_url = http://<%= @management_ip %>/identity
+www_authenticate_uri = http://<%= @management_ip %>/identity
+auth_type = password
+memcached_servers = <%= @memcached_ip %>:11211
+region_name = <%= @region %>
+service_token_roles_required = True
+
+
+[libvirt]
+live_migration_uri = qemu+ssh://<%= @service %>@%s/system
+cpu_mode = <%= @cpu_mode %>
+virt_type = kvm
+
+
+[metrics]
+[mks]
+
+
+[neutron]
+auth_url = http://<%= @management_ip %>/identity
+auth_type = password
+auth_strategy = keystone
+project_domain_name = default
+user_domain_name = default
+region_name = <%= @region %>
+project_name = service
+username = neutron
+password = <%= @password %>
+
+
+[notifications]
+notification_format = unversioned
+notify_on_state_change = vm_and_task_state
+
+
+[osapi_v21]
+
+
+[oslo_concurrency]
+lock_path = <%= @service_dir %>/<%= @service %>/tmp
+
+
+[oslo_messaging_amqp]
+[oslo_messaging_kafka]
+
+
+[oslo_messaging_notifications]
+transport_url = rabbit://<%= @service %>:<%= @password %>@<%= @rabbitmq_ip %>:5672/
+driver = messagingv2
+
+
+[oslo_messaging_rabbit]
+[oslo_middleware]
+[oslo_policy]
+[pci]
+
+
+[placement]
+region_name = <%= @region %>
+project_domain_name = Default
+project_name = service
+auth_type = password
+user_domain_name = Default
+auth_url = http://<%= @management_ip %>/identity
+username = placement
+password = <%= @password %>
+
+
+[powervm]
+[privsep]
+[profiler]
+[quota]
+[rdp]
+[remote_debug]
+
+
+[scheduler]
+workers = 2
+driver = filter_scheduler
+discover_hosts_in_cells_interval = 300
+
+
+[serial_console]
+[service_user]
+
+
+[spice]
+agent_enabled = False
+enabled = true
+server_listen = <%= @management_ip %>
+server_proxyclient_address = <%= @management_ip %>
+html5proxy_base_url = http://<%= @management_ip %>:6082/spice_auto.html
+keymap = en-us
+
+
+[upgrade_levels]
+compute = auto
+
+
+[vault]
+[vendordata_dynamic_auth]
+[vmware]
+[vnc]
+[workarounds]
+
+
+[wsgi]
+api_paste_config = /etc/nova/api-paste.ini
+
+
+[xenserver]
+[xvp]
+[zvm]
+
+

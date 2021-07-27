@@ -1,0 +1,159 @@
+#cloud-config
+#
+groups:
+- gogs
+
+
+users:
+- default
+- name: gogs
+  primary_group: gogs
+  homedir: /var/lib/gogs
+  shell: /bin/false
+
+
+package_update: true
+
+
+packages:
+- wget
+- mariadb-server
+- git
+
+
+write_files:
+# disable cloud init
+- path: /etc/cloud/cloud-init.disabled
+  owner: root:root
+
+# Always install packages with no recommends enabled  
+- content: |
+    APT::Install-Recommends "0";
+    APT::Install-Suggests "0";
+  path: /etc/apt/apt.conf.d/01norecommend
+    
+# Mariadb Gogs config
+- content: |
+    default-storage-engine = innodb
+    innodb_file_per_table = on
+    innodb_file_format = Barracuda
+    innodb_large_prefix = on
+    innodb_file_per_table = on
+    innodb_flush_log_at_trx_commit = 0
+    max_connections = 4096
+    collation-server = utf8mb4_general_ci
+    character-set-server = utf8mb4
+  path: /etc/mysql/mariadb.conf.d/99-gogs.cnf
+
+# Gogs service file
+- content: |
+    [Unit]
+    Description=Gogs
+    After=syslog.target
+    After=network.target
+    After=mariadb.service mysqld.service postgresql.service memcached.service redis.service
+
+    [Service]
+    # Modify these two values and uncomment them if you have
+    # repos with lots of files and get an HTTP error 500 because
+    # of that
+    ###
+    #LimitMEMLOCK=infinity
+    #LimitNOFILE=65535
+    Type=simple
+    User=gogs
+    Group=gogs
+    WorkingDirectory=/var/lib/gogs
+    ExecStart=/opt/gogs/gogs web
+    Restart=always
+    Environment=USER=gogs HOME=/var/lib/gogs
+
+    [Install]
+    WantedBy=multi-user.target
+  path: /lib/systemd/system/gogs.service
+
+# Gogs config
+- content: |
+    APP_NAME = Gogs
+    RUN_USER = gogs
+    RUN_MODE = prod
+
+    [database]
+    DB_TYPE  = mysql
+    HOST     = 127.0.0.1:3306
+    NAME     = gogs
+    USER     = gogs
+    PASSWD   = gogs
+    SSL_MODE = disable
+    MAX_OPEN_CONNS = 30
+    MAX_IDLE_CONNS = 30
+
+    [repository]
+    ROOT = /var/lib/gogs/gogs-repositories
+
+    [server]
+    DOMAIN           = pupet
+    HTTP_PORT        = 3000
+    ROOT_URL         = http://$address:3000/
+    DISABLE_SSH      = false
+    SSH_PORT         = 22
+    START_SSH_SERVER = false
+    OFFLINE_MODE     = false
+
+    [mailer]
+    ENABLED = false
+
+    [service]
+    REGISTER_EMAIL_CONFIRM = false
+    ENABLE_NOTIFY_MAIL     = false
+    DISABLE_REGISTRATION   = false
+    ENABLE_CAPTCHA         = false
+    REQUIRE_SIGNIN_VIEW    = true
+
+    [picture]
+    DISABLE_GRAVATAR        = false
+    ENABLE_FEDERATED_AVATAR = false
+
+    [session]
+    PROVIDER = file
+
+    [log]
+    ROOT_PATH = /var/log/gogs
+    MODE      = file
+    LEVEL     = Info
+
+    [security]
+    INSTALL_LOCK = true
+    SECRET_KEY   = AGqLnuwXLLoundb
+  path: /opt/gogs/custom/conf/app.ini
+
+
+runcmd:
+# hardening mariadb
+- mariadb -u root -e "DELETE FROM mysql.global_priv WHERE User=''"
+- mariadb -u root -e "DELETE FROM mysql.global_priv WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1')"
+- mariadb -u root -e "DROP DATABASE IF EXISTS test"
+- mariadb -u root -e "DELETE FROM mysql.db WHERE Db='test' OR Db='test_%'"
+# create gogs user and database
+- mariadb -u root -e "CREATE DATABASE IF NOT EXISTS gogs CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci"
+- mariadb -u root -e "GRANT ALL PRIVILEGES ON gogs.* TO 'gogs'@'localhost' IDENTIFIED BY 'gogs'"
+# apply changes
+- mariadb -u root -e "FLUSH PRIVILEGES"
+# set mariadb root password
+- mysqladmin --user root password "$password"
+# install gogs
+- mkdir -p /opt/gogs/data
+- mkdir -p /opt/gogs/custom/conf
+- mkdir /var/log/gogs
+- chown -R gogs:gogs /opt/gogs
+- chown -R gogs:gogs /var/log/gogs
+- cd /opt/gogs
+- wget https://dl.gogs.io/0.12.1/gogs_0.12.1_linux_amd64.tar.gz 
+- tar xf gogs_0.12.1_linux_amd64.tar.gz --strip-components=1
+# start services
+- systemctl daemon-reload
+- systemctl enable mariadb
+- systemctl start mariadb
+- systemctl enable gogs
+- systemctl start gogs
+

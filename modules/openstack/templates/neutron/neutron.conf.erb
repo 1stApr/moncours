@@ -1,0 +1,89 @@
+[DEFAULT]
+bind_host = <%= @management_ip %>
+state_path = <%= @service_dir %>/<%= @service %>
+
+core_plugin = ml2
+service_plugins = router,firewall_v2,vpnaas
+allow_overlapping_ips = true
+api_workers = 2
+
+transport_url = rabbit://<%= @service %>:<%= @password %>@<%= @rabbitmq_ip %>:5672/
+
+log_dir = <%= @logs_dir %>/<%= @service %>
+
+notify_nova_on_port_status_changes = true
+notify_nova_on_port_data_changes = true
+
+auth_strategy = keystone
+
+dhcp_agents_per_network = 2
+
+
+[agent]
+
+
+[cors]
+allowed_origin = http://<%= @management_ip %>
+
+
+[database]
+connection = mysql+pymysql://<%= @service %>:<%= @password %>@<%= @dbhost %>/<%= @service %>?charset=utf8
+
+
+[ironic]
+
+
+[keystone_authtoken]
+project_domain_name = Default
+project_name = service
+user_domain_name = Default
+username = <%= @service %>
+password = <%= @password %>
+auth_url = http://<%= @management_ip %>/identity
+www_authenticate_uri = http://<%= @management_ip %>/identity
+auth_type = password
+memcached_servers = <%= @memcached_ip %>:11211
+region_name = <%= @region %>
+
+
+[nova]
+auth_url = http://<%= @management_ip %>/identity
+auth_type = password
+project_domain_name = Default
+user_domain_name = Default
+region_name = <%= @region %>
+project_name = service
+username = nova
+password = <%= @password %>
+memcached_servers = <%= @memcached_ip %>:11211
+region_name = <%= @region %>
+
+
+[oslo_concurrency]
+lock_path = <%= @service_dir %>/<%= @service %>/tmp
+
+
+[oslo_messaging_amqp]
+[oslo_messaging_kafka]
+
+
+[oslo_messaging_notifications]
+driver = messagingv2
+
+
+[oslo_messaging_rabbit]
+[oslo_middleware]
+[oslo_policy]
+[privsep]
+[quotas]
+[ssl]
+
+
+[service_providers]
+service_provider = FIREWALL_V2:fwaas_db:neutron_fwaas.services.firewall.service_drivers.agents.agents.FirewallAgentDriver:default
+
+
+[fwaas]
+agent_version = v2
+driver = neutron_fwaas.services.firewall.service_drivers.agents.drivers.linux.iptables_fwaas_v2.IptablesFwaasDriver
+enabled = True

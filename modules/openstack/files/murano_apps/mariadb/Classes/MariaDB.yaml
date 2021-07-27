@@ -1,0 +1,54 @@
+Namespaces:
+  =: cloud.openstack
+  std: io.murano
+  res: io.murano.resources
+  sys: io.murano.system
+  conf: io.murano.configuration
+
+Name: MariaDB
+
+Extends: std:Application
+
+Properties:
+  instance:
+    Contract: $.class(res:Instance).notNull()
+  database:
+    Contract: $.string()
+  username:
+    Contract: $.string()
+  password:
+    Contract: $.string()
+
+Methods:
+  .init:
+    Body:
+      - $._environment: $.find(std:Environment).require()
+
+  deploy:
+    Body:
+      - If: not $.getAttr(deployed, false)
+        Then:
+          - $._environment.reporter.report($this, 'Creating VM for MariaDB')
+          - $securityGroupIngress:
+              - ToPort: 3306
+                FromPort: 3306
+                IpProtocol: tcp
+                External: true
+          - $._environment.securityGroupManager.addGroupIngress($securityGroupIngress)
+          - $.instance.deploy()
+          - $._environment.reporter.report($this, 'Instance is created. Deploying MariaDB Server')
+          - $replacements:
+              "%PASSWORD%": $this.password
+              "%DATABASE%": $this.database
+              "%USERNAME%": $this.username
+          - $file: sys:Resources.string('deployMariaDB.sh').replace($replacements)
+          - conf:Linux.runCommand($.instance.agent, $file)   
+          - $._environment.reporter.report($this, 'MariDB Server is installed.')
+          - $.setAttr(deployed, true)
+          - If: $.instance.assignFloatingIp 
+            Then:
+              - $host: $.instance.floatingIpAddress
+            Else:
+              - $host: $.instance.ipAddresses.first()
+          - $._environment.reporter.report($this, format('MySQL is available at {0}', $host))
+

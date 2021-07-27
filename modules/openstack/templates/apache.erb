@@ -1,0 +1,19 @@
+Listen <%= @port %>
+
+<VirtualHost <%= @listen %>:<%= @port %>>
+<% if @service == 'glance' -%>
+    KeepAlive Off
+    SetEnv proxy-sendcl 1
+    ProxyPass / http://127.0.0.1:3<%= @port %>/
+<% else %>     
+    ProxyPass / uwsgi://127.0.0.1:3<%= @port %>/
+<% end -%>    
+</VirtualHost>
+
+<% if @service == 'glance' -%>
+KeepAlive Off
+SetEnv proxy-sendcl 1
+ProxyPass /<%= @proxy %> http://127.0.0.1:3<%= @port %>/
+<% else %> 
+ProxyPass /<%= @proxy %> uwsgi://127.0.0.1:3<%= @port %>/
+<% end -%>

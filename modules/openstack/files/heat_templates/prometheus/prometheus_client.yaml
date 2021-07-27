@@ -1,0 +1,99 @@
+heat_template_version: 2018-08-31
+description: Launch a Linux instance with Prometheus node exporter service.
+             Dumb instance for testing prometheus monitoring purpose only.
+             This all-in-one template without any depencies.
+
+parameters:
+  net_name:
+    type: string
+    default: infrastructure
+  subnet_name:
+    type: string
+    default: infr-subnet  
+  image:
+    type: string
+    default: ubuntu-18.04-minimal-amd64
+  flavor:
+    type: string
+    default: db.small
+  autoscaling:
+    type: string
+    default: 'true'
+  project_id:
+    type: string      
+  stack_id:
+    type: string      
+  stack_name:
+    type: string      
+
+
+resources:
+  port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: net_name }
+      security_groups: [ basic, prometheus ]
+      fixed_ips: 
+      - subnet_id: { get_param: subnet_name }
+
+  host:
+    type: OS::Nova::Server
+    properties:
+      image: { get_param: image}
+      flavor: { get_param: flavor}
+      metadata: { "prometheus_autoscaling": { get_param: autoscaling},
+                  "stack_id": { get_param: stack_id },
+                  "project_id": { get_param: project_id },
+                  "stack_name": { get_param: stack_name } }
+      networks:
+        - port: { get_resource: port }
+      user_data_format: RAW
+      user_data: |
+        #cloud-config
+        preserve_hostname: False
+        hostname: client
+        fqdn: client.local
+
+        users:
+        - default
+        - name: alex
+          groups: sudo
+          shell: /bin/bash
+          lock-passwd: false
+          passwd: $6$saltsalt$OpvVlYPY6YYXhosOAmr.a7PTpqaXv75xsI0bYfRKG3FGAOBgD32Mz/WXe.YKIKWhBVhh4DeNh281JyPVIBlKD0
+          sudo: ['ALL=(ALL) NOPASSWD:ALL']
+        ssh_pwauth: true
+
+        package_update: true
+
+        packages:
+        - wget
+        - openssh-server
+
+        write_files:
+        - content: |
+            [Unit]
+            Description=Node Exporter
+            Wants=network-online.target
+            After=network-online.target
+
+            [Service]
+            User=prometheus
+            Type=simple
+            ExecStart=/opt/prometheus/node_exporter
+
+            [Install]
+            WantedBy=multi-user.target
+          path: /lib/systemd/system/node_exporter.service
+          owner: root:root
+
+        runcmd:
+        - grep prometheus /etc/passwd > /dev/null || useradd -d /opt/prometheus -m prometheus
+        - cd /opt/prometheus
+        - wget https://github.com/prometheus/node_exporter/releases/download/v0.18.1/node_exporter-0.18.1.linux-amd64.tar.gz
+        - tar xf node_exporter-0.18.1.linux-amd64.tar.gz --strip 1
+        - systemctl daemon-reload
+        - systemctl enable node_exporter
+        - systemctl start node_exporter
+
+

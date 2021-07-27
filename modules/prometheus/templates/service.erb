@@ -1,0 +1,30 @@
+[Unit]
+<% if @service == 'prometheus' %>Description=Prometheus monitoring service<% end -%>
+<% if @service == 'prometheus-alertmanager' %>Description=Prometheus Alertmanager<% end -%>
+<% if @service == 'prometheus-am-executor' %>Description=Prometheus Web Hook Receiver<% end -%>
+Wants=network-online.target
+After=network-online.target syslog.target network.target
+After=mariadb.service mysqld.service postgresql.service memcached.service rabbitmq.service
+
+[Service]
+User=prometheus
+Group=prometheus
+Type=simple
+<% if @service == 'prometheus' %>
+ExecStart=<%= @service_dir %>/prometheus \
+         --config.file <%= @config_dir %>/prometheus.yaml \
+         --storage.tsdb.path <%= @data_dir %> \
+         --storage.tsdb.retention=<%= @retention %> \
+         --web.console.templates=<%= @service_dir %>/consoles \
+         --web.console.libraries=<%= @service_dir %>/console_libraries \
+         --web.listen-address="<%= @listen %>:9090"  
+<% end -%>
+<% if @service == 'prometheus-alertmanager' %>
+ExecStart=<%= @service_dir %>/alertmanager \
+         --storage.path=<%= @data_dir %>  \
+         --config.file=<%= @config_dir %>/alertmanager.yaml
+<% end -%>
+<% if @service == 'prometheus-am-executor' %>ExecStart=<%= @service_dir %>/prometheus-am-executor -l <%= @executor_listen %>:<%= @executor_port %> -v <%= @service_dir %>/autoscaling.sh<% end -%>
+
+[Install]
+WantedBy=multi-user.target

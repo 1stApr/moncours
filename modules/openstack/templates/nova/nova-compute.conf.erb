@@ -1,0 +1,143 @@
+[DEFAULT]
+transport_url = rabbit://<%= @service %>:<%= @password %>@<%= @rabbitmq_ip %>:5672/nova_cell1
+
+my_ip = <%= @management_ip %>
+
+vif_plugging_timeout = 300
+vif_plugging_is_fatal = true
+use_neutron = true
+
+firewall_driver = nova.virt.firewall.NoopFirewallDriver
+
+compute_driver = libvirt.LibvirtDriver
+
+force_config_drive = true
+default_ephemeral_format = ext4
+pointer_model = ps2mouse
+graceful_shutdown_timeout = 5
+osapi_compute_workers = 2
+
+instances_path = <%= @service_dir %>/nova/instances
+state_path = <%= @service_dir %>/nova
+
+enabled_apis = osapi_compute,metadata
+shutdown_timeout = 0
+osapi_compute_listen = 0.0.0.0
+allow_resize_to_same_host = true
+instance_name_template = instance-%08x
+
+instance_usage_audit = True
+instance_usage_audit_period = hour
+
+rootwrap_config = /etc/nova/rootwrap.conf
+
+log_dir = <%= @logs_dir %>/<%= @service %>
+
+
+
+[scheduler]
+workers = 2
+driver = filter_scheduler
+discover_hosts_in_cells_interval = 300
+
+
+[filter_scheduler]
+track_instance_changes = False
+enabled_filters = AvailabilityZoneFilter,ComputeFilter,ComputeCapabilitiesFilter,ImagePropertiesFilter,ServerGroupAntiAffinityFilter,ServerGroupAffinityFilter,SameHostFilter,DifferentHostFilter
+
+
+[neutron]
+auth_url = http://<%= @management_ip %>/identity
+auth_type = password
+auth_strategy = keystone
+project_domain_name = default
+user_domain_name = default
+region_name = <%= @region %>
+project_name = service
+username = neutron
+password = <%= @password %>
+default_floating_pool = public
+
+
+[database]
+
+[api_database]
+
+
+[cache]
+memcache_servers = <%= @memcached_ip %>:11211
+backend = dogpile.cache.memcached
+enabled = true
+
+[keystone_authtoken]
+#cafile = /opt/stack/data/ca-bundle.pem
+memcached_servers = <%= @memcached_ip %>:11211
+project_domain_name = Default
+project_name = service
+user_domain_name = Default
+username = <%= @service %>
+password = <%= @password %>
+auth_url = http://<%= @management_ip %>/identity
+auth_type = password
+
+
+
+[oslo_concurrency]
+lock_path = <%= @service_dir %>/<%= @service %>/tmp
+
+
+[upgrade_levels]
+compute = auto
+
+
+[oslo_messaging_notifications]
+transport_url = rabbit://<%= @service %>:<%= @password %>@<%= @rabbitmq_ip %>:5672/
+driver = messagingv2
+
+
+[notifications]
+notification_format = unversioned
+notify_on_state_change = vm_and_task_state
+
+
+[conductor]
+workers = 2
+
+
+[cinder]
+os_region_name = <%= @region %>
+
+
+[libvirt]
+live_migration_uri = qemu+ssh://<%= @service %>@%s/system
+cpu_mode = <%= @cpu_mode %>
+virt_type = kvm
+
+
+[placement]
+region_name = <%= @region %>
+project_domain_name = Default
+project_name = service
+auth_type = password
+user_domain_name = Default
+auth_url = http://<%= @management_ip %>/identity
+username = placement
+password = <%= @password %>
+
+
+[workarounds]
+[vnc]
+
+
+[spice]
+agent_enabled = False
+enabled = true
+server_listen = <%= @management_ip %>
+server_proxyclient_address = <%= @management_ip %>
+html5proxy_base_url = http://<%= @public_ip %>:6082/spice_auto.html
+html5proxy_host = 0.0.0.0
+html5proxy_port = 6082
+keymap = en-us
+
+[wsgi]
+api_paste_config = /etc/nova/api-paste.ini

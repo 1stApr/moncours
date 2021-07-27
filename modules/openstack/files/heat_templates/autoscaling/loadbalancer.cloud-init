@@ -1,0 +1,130 @@
+#cloud-config
+groups:
+- consul
+- gobetween
+- prometheus
+
+users:
+- default
+- name: consul
+  primary_group: consul
+  homedir: /opt/consul
+  shell: /bin/false
+- name: gobetween
+  primary_group: gobetween
+  homedir: /opt/gobetween
+  shell: /bin/false
+- name: prometheus
+  primary_group: prometheus
+  homedir: /opt/prometheus
+  shell: /bin/false
+
+
+package_update: true
+
+packages:
+- wget
+- unzip
+- libcap2-bin
+
+write_files:
+- path: /etc/cloud/cloud-init.disabled
+  owner: root:root
+- content: |
+    [Unit]
+    Description=Node Exporter
+    Wants=network-online.target
+    After=network-online.target
+
+    [Service]
+    User=prometheus
+    Type=simple
+    ExecStart=/opt/prometheus/node_exporter
+
+    [Install]
+    WantedBy=multi-user.target
+  path: /lib/systemd/system/node_exporter.service
+- content: |
+    [Unit]
+    Description=HashiCorp Consul Service
+    After=syslog.target
+    After=network.target
+
+    [Service]
+    Type=simple
+    User=consul
+    Group=consul
+    WorkingDirectory=/opt/consul
+    ExecStart=/opt/consul/consul agent -config-file /opt/consul/consul.json
+    Restart=always
+    Environment=USER=consul HOME=/opt/consul
+
+    [Install]
+    WantedBy=multi-user.target
+  path: /lib/systemd/system/consul.service
+- content: |
+    {
+      "datacenter": "openstack",
+      "data_dir": "/opt/consul",
+      "log_level": "WARN",
+      "node_name": "loadbalancer",
+      "bind_addr": "$public_ip",
+      "server": true,
+      "bootstrap_expect": 1
+    }
+  path: /opt/consul/consul.json
+- content: |
+    [Unit]
+    Description=Gobetween LoadBalancer Service
+    After=syslog.target network.target consul.service
+
+    [Service]
+    Type=simple
+    User=gobetween
+    Group=gobetween
+    WorkingDirectory=/opt/gobetween
+    ExecStart=/opt/gobetween/gobetween -c /opt/gobetween/config.toml
+    Restart=always
+
+    [Install]
+    WantedBy=multi-user.target
+  path: /lib/systemd/system/gobetween.service
+- content: |
+    [servers.web]
+    protocol = "tcp"
+    bind = "$public_ip:80"
+    balance = "roundrobin"
+
+        [servers.web.discovery]
+        kind = "consul"
+        interval = "30s"
+        timeout = "10s"
+        consul_host = "localhost:8500"
+        consul_service_name = "webserver"
+        consul_service_tag = "backend"
+        consul_service_passing_only = true
+        consul_tls_enabled = false
+  path: /opt/gobetween/config.toml
+
+runcmd:
+- cd /opt/prometheus
+- wget https://github.com/prometheus/node_exporter/releases/download/v0.18.1/node_exporter-0.18.1.linux-amd64.tar.gz
+- tar xf node_exporter-0.18.1.linux-amd64.tar.gz --strip 1        
+- cd /opt/consul
+- wget https://releases.hashicorp.com/consul/1.7.2/consul_1.7.2_linux_amd64.zip
+- unzip consul_1.7.2_linux_amd64.zip
+- chown -R consul:consul /opt/consul
+- cd /opt/gobetween
+- wget https://github.com/yyyar/gobetween/releases/download/0.7.0/gobetween_0.7.0_linux_amd64.tar.gz
+- tar xf gobetween_0.7.0_linux_amd64.tar.gz
+- chown -R gobetween:gobetween /opt/gobetween
+- setcap CAP_NET_BIND_SERVICE=+eip /opt/gobetween/gobetween
+- systemctl daemon-reload
+- systemctl enable node_exporter
+- systemctl start node_exporter
+- systemctl enable consul
+- systemctl start consul
+- systemctl enable gobetween
+- systemctl start gobetween
+
+

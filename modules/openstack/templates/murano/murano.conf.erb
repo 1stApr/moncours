@@ -1,0 +1,101 @@
+[DEFAULT]
+bind_host = <%=  @management_ip %>
+home_region = <%= @region %>
+log_dir = <%= @logs_dir %>/<%= @service %>
+
+transport_url = rabbit://<%= @service %>:<%= @password %>@<%= @rabbitmq_ip %>:5672/
+
+
+[barbican]
+
+
+[cors]
+allowed_origin = http://<%= @management_ip %>
+
+
+[database]
+connection = mysql+pymysql://<%= @service %>:<%= @password %>@<%= @dbhost %>/<%= @service %>?charset=utf8
+
+
+[engine]
+use_trusts = true
+workers = 1
+
+
+[glare]
+
+[heat]
+[key_manager]
+
+[keystone]
+auth_url = http://<%= @management_ip %>/identity
+
+
+[keystone_authtoken]
+#cafile = /opt/stack/data/ca-bundle.pem
+project_domain_name = Default
+project_name = service
+user_domain_name = Default
+username = <%= @service %>
+password = <%= @password %>
+auth_url = http://<%= @management_ip %>/identity
+www_authenticate_uri = http://<%= @management_ip %>/identity
+auth_type = password
+memcached_servers = <%= @memcached_ip %>:11211
+region_name = <%= @region %>
+service_token_roles_required = True
+
+
+[mistral]
+
+[murano]
+url = http://<%=  @management_ip %>/<%= @murano_proxy %>
+
+
+[murano_auth]
+#cafile = /opt/stack/data/ca-bundle.pem
+project_domain_name = Default
+project_name = service
+user_domain_name = Default
+username = <%= @service %>
+password = <%= @password %>
+auth_url = http://<%= @management_ip %>/identity
+www_authenticate_uri = http://<%= @management_ip %>/identity
+auth_type = password
+memcached_servers = <%= @memcached_ip %>:11211
+
+
+[networking]
+# https://murano.readthedocs.io/en/stable-liberty/administrator-guide/configuration.html#network-configuration
+default_dns = <%= @dns %>
+# create_router = true
+external_network = murano
+
+
+[neutron]
+url = http://<%=  @management_ip %>/<%= @neutron_proxy %>
+
+
+[oslo_messaging_amqp]
+[oslo_messaging_kafka]
+
+[oslo_messaging_notifications]
+driver = messagingv2
+
+
+[oslo_messaging_rabbit]
+[oslo_policy]
+
+
+[rabbitmq]
+password = <%= @password %>
+login = <%= @service %>
+host = <%= @rabbitmq_ip %>
+
+
+[ssl]
+[stats]
+[vault]
+#use_ssl = false
+
+

@@ -1,0 +1,41 @@
+#cloud-config
+package_update: true
+
+
+packages:
+- curl
+
+
+write_files:
+# disable cloud init
+- path: /etc/cloud/cloud-init.disabled
+  owner: root:root
+# Always install packages with no recommends enabled  
+- content: |
+    APT::Install-Recommends "0";
+    APT::Install-Suggests "0";
+  path: /etc/apt/apt.conf.d/01norecommend
+# Pin apt to use gitlab package from gitlab.com instead from debian repo  
+- content: |
+    Explanation: Prefer GitLab provided packages over the Debian native ones
+    Package: gitlab-ce
+    Pin: origin packages.gitlab.com
+    Pin-Priority: 1001
+  path: /etc/apt/preferences.d/pin-gitlab-ce.pref  
+
+
+runcmd:
+- curl https://packages.gitlab.com/install/repositories/gitlab/gitlab-ce/script.deb.sh | sudo bash
+- export EXTERNAL_URL="https://$(hostname -f)"; apt-get install gitlab-ce -y
+# disable prometheus and all related staff
+- sed -i "s/.*prometheus_monitoring.*/prometheus_monitoring['enable'] = false/" /etc/gitlab/gitlab.rb
+# reduce running processes to reduce ram consuption
+- sed -i "s/.*puma.*worker_processes.*/puma['worker_processes'] = 2/" /etc/gitlab/gitlab.rb
+- sed -i "s/.*sidekiq.*concurrency.*/sidekiq['concurrency'] = 9/" /etc/gitlab/gitlab.rb
+# disable docker registry
+- sed -i "s/.*registry.*enable.*/registry['enable'] = false/" /etc/gitlab/gitlab.rb
+# because this is local setup without public domain - disable letsencript
+- sed -i "s/.*letsencrypt.*enable.*/letsencrypt['enable'] = false/" /etc/gitlab/gitlab.rb
+# apply new configuration
+- gitlab-ctl reconfigure
+

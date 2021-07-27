@@ -1,0 +1,6 @@
+<%= @service %> ALL=(root) NOPASSWD:ALL
+Defaults:<%= @service %> secure_path=/sbin:/usr/sbin:/usr/bin:/bin:/usr/local/sbin:/usr/local/bin
+Defaults:<%= @service %> !requiretty
+
+<%= @service %> ALL=(root) NOPASSWD: /usr/local/bin/nova-rootwrap /etc/nova/rootwrap.conf *
+<%= @service %> ALL=(root) NOPASSWD: /usr/local/bin/nova-rootwrap-daemon /etc/nova/rootwrap.conf

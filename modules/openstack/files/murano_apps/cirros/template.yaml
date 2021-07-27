@@ -1,0 +1,47 @@
+heat_template_version: 2018-08-31
+description: Launch a basic instance with CirrOS image using the
+             ``tiny`` flavor and one network.
+
+
+parameters:
+  flavor_name:
+    type: string
+    label: Instance Type
+    description: Type of instance (flavor) to be used
+    default: tiny
+  net_id:
+    type: string
+    description: Existing network name
+    default: murano
+  subnet_id:
+    type: string
+    description: Network subnet name
+    default: murano-subnet
+
+
+resources:
+  instance_port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: net_id }
+      fixed_ips:
+      - subnet_id: { get_param: subnet_id }
+      security_groups: [ basic ]
+
+  server:
+    type: OS::Nova::Server
+    properties:
+      image: cirros-0.4.0-x86_64
+      flavor: { get_param: flavor_name }
+      networks:
+        - port: { get_resource: instance_port }
+
+
+outputs:
+  instance_name:
+    description: Name of the instance.
+    value: { get_attr: [ server, name ] }
+  instance_ip:
+    description: IP address of the instance.
+    value: { get_attr: [ server, first_address ] }
+

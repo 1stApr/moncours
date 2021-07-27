@@ -1,0 +1,37 @@
+[uwsgi]
+lazy-apps = true
+add-header = Connection: close
+buffer-size = 65535
+hook-master-start = unix_signal:15 gracefully_kill_them_all
+thunder-lock = true
+plugins = python
+enable-threads = true
+worker-reload-mercy = 90
+exit-on-reload = true
+die-on-term = true
+master = true
+processes = 2
+<% if @unit == 'glance-api' -%>
+socket-timeout = 10
+http-auto-chunked = true
+http-chunked-input = true
+http-raw-body = true
+# use http-socket because apache2 uwsgi proxy doesn't support chunked upload
+# with proxy-uwsgi image upload iterrupts with HTTP 411 error: Length Required
+# curent latest uwsgi version is 2.0.18
+# if you have newest version, test uwsgi proxy chunked upload, perhabs it works with it now
+http-socket = <%= @listen %>:3<%= @port %>
+<% else -%>
+uwsgi-socket = <%= @listen %>:3<%= @port %>
+<% end -%>
+<% if @unit == 'keystone-public' %>wsgi-file = /usr/local/bin/keystone-wsgi-public<% end -%>
+<% if @unit == 'keystone-admin' %>wsgi-file = /usr/local/bin/keystone-wsgi-admin<% end -%>
+<% if @unit == 'cinder-api' %>wsgi-file = /usr/local/bin/cinder-wsgi<% end -%>
+<% if @unit == 'placement' %>wsgi-file = /usr/local/bin/placement-api<% end -%>
+<% if @unit == 'nova-api' %>wsgi-file = /usr/local/bin/nova-api-wsgi<% end -%>
+<% if @unit == 'heat-api' %>wsgi-file = /usr/local/bin/heat-wsgi-api<% end -%>
+<% if @unit == 'heat-api-cfn' %>wsgi-file = /usr/local/bin/heat-wsgi-api-cfn<% end -%>
+<% if @unit == 'glance-api' %>wsgi-file = /usr/local/bin/glance-wsgi-api<% end -%>
+<% if @unit == 'murano-api' %>wsgi-file = /usr/local/bin/murano-wsgi-api<% end -%>
+<% if @unit == 'gnocchi-api' %>wsgi-file = /usr/local/bin/gnocchi-api<% end -%>
+<% if @unit == 'aodh-api' %>wsgi-file = /usr/local/bin/aodh-api<% end -%>

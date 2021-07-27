@@ -1,0 +1,74 @@
+heat_template_version: 2018-08-31
+description: >
+  Launch Linux instance with Gogs GIT server.
+
+
+parameters:
+  our_net:
+    type: string
+    description: Network from connections to Gogs server are allowed. Usually our private network entirely.
+  network:
+    type: string
+    description: Existed network to attach instance
+  subnet:
+    type: string
+    description: Subnet name
+  image:
+    type: string
+    default: debian-10.3.0-amd64
+  flavor:
+    type: string
+    default: large
+  key_name:
+    type: string
+    description: SSH key name 
+    default: alex
+  db_password:
+    type: string
+    description: MariaDB password for root user
+
+
+resources:
+  securitygroup:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      description: Allow Gogs traffic
+      name: gogs_rules
+      rules: [ { direction: ingress, ethertype: IPv4, port_range_min: 3000, port_range_max: 3000, protocol: tcp, remote_ip_prefix: { get_param: our_net } },
+               { direction: ingress, ethertype: IPv4, port_range_min: 443, port_range_max: 443, protocol: tcp, remote_ip_prefix: { get_param: our_net } } ]
+
+  port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: network }
+      security_groups: [ basic, { get_resource: securitygroup } ]
+      fixed_ips: 
+      - subnet_id: { get_param: subnet }
+
+  server:
+    type: OS::Nova::Server
+    properties:
+      # compose instance name from 'gogs_' prefix
+      # and number from last octet of instance IP address
+      name: 
+        list_join: ['', ["gogs_", str_split: ['.', get_attr: [port, fixed_ips, 0, ip_address], 3]]]
+      image: { get_param: image}
+      flavor: { get_param: flavor}
+      key_name: { get_param: key_name }
+      networks:
+        - port: { get_resource: port }   
+      user_data_format: RAW
+      user_data:
+        str_replace:
+          template: { get_file: gogs.cloud-init }
+          params:
+            $password: { get_param: db_password }
+            $address: { get_attr: [port, fixed_ips, 0, ip_address] }          
+
+outputs:
+  instance_name:
+    description: Name of the instance.
+    value: { get_attr: [ server, name ] }
+  instance_ip:
+    description: IP address of the instance.
+    value: { get_attr: [ server, first_address ] }

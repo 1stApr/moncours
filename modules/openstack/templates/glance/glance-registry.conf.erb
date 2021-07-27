@@ -1,0 +1,33 @@
+[DEFAULT]
+graceful_shutdown_timeout = 5
+transport_url = rabbit://<%= @service %>:<%= @password %>@<%= @rabbitmq_ip %>:5672/
+use_syslog = False
+workers = 2
+bind_host = <%= @management_ip %>
+log_dir = <%= @logs_dir %>/<%= @service %>
+
+
+[database]
+connection = mysql+pymysql://<%= @service %>:<%= @password %>@<%= @dbhost %>/<%= @service %>?charset=utf8
+
+
+[paste_deploy]
+flavor = keystone
+
+[keystone_authtoken]
+#cafile = /opt/stack/data/ca-bundle.pem
+memcached_servers = <%= @memcached_ip %>:11211
+project_domain_name = Default
+project_name = service
+user_domain_name = Default
+username = <%= @service %>
+password = <%= @password %>
+auth_url = http://<%= @management_ip %>/identity
+www_authenticate_uri = http://<%= @management_ip %>/identity
+auth_type = password
+service_token_roles_required = True
+
+
+
+[oslo_messaging_notifications]
+driver = messagingv2

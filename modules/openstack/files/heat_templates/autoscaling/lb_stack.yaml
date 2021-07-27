@@ -1,0 +1,135 @@
+heat_template_version: 2018-08-31
+description: Launch loadbalancer instance
+
+
+parameters:
+  external_network:
+    type: string
+    description: >
+      External network name to assotiate floating IP 
+      from for stack self-service network
+    default: infrastructure
+
+  stack_subnet:
+    type: string
+    default: 192.168.10.0/24
+    description: Self-Service IP subnet address
+
+  loadbalancer_ip:
+    type: string
+    default: 192.168.10.10
+    description: LoadBalancer static IP address
+
+  dns_servers:
+    type: comma_delimited_list
+    default: [8.8.8.8, 8.8.4.4]
+    description: List of DNS server 
+
+
+resources:
+  # floating IP
+  floating_ip:
+    type: OS::Nova::FloatingIP
+    properties:
+      pool: { get_param: external_network }
+
+  # self-service subnet
+  lb_net:
+    type: OS::Neutron::Net
+  lb_subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      network_id: { get_resource: lb_net }
+      cidr: { get_param: stack_subnet }
+      dns_nameservers: { get_param: dns_servers }
+      ip_version: 4
+
+  # virtual router
+  lb_router:
+    type: OS::Neutron::Router
+    properties:
+      external_gateway_info: { network: { get_param: external_network } }
+  lb_interface:
+    type: OS::Neutron::RouterInterface
+    properties:
+      router_id: { get_resource: lb_router }
+      subnet: { get_resource: lb_subnet }
+
+  # security groups for VMs
+  lb_securitygroup:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      description: Allow http traffic to load balancer from our network
+      name: ingress_lb_stack_external
+      rules: [ { direction: ingress, ethertype: IPv4, port_range_min: 80, port_range_max: 80, protocol: tcp, remote_ip_prefix: 10.64.0.0/16 } ]
+
+  # services security group
+  # allow consul and web traffic to backend
+  sr_securitygroup:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      description: Allow consul and web traffic between loadbalancer and backend instances
+      name: ingress_lb_stack_internal
+      rules: [ { direction: ingress, ethertype: IPv4, port_range_min: 8300, port_range_max: 8301, protocol: tcp, remote_ip_prefix: { get_param: stack_subnet } },
+               { direction: ingress, ethertype: IPv4, port_range_min: 8500, port_range_max: 8500, protocol: tcp, remote_ip_prefix: { get_param: stack_subnet } },
+               { direction: ingress, ethertype: IPv4, port_range_min: 8600, port_range_max: 8600, protocol: tcp, remote_ip_prefix: { get_param: stack_subnet } },
+               { direction: ingress, ethertype: IPv4, port_range_min: 8600, port_range_max: 8600, protocol: udp, remote_ip_prefix: { get_param: stack_subnet } },
+               { direction: ingress, ethertype: IPv4, port_range_min: 80, port_range_max: 80, protocol: tcp, remote_ip_prefix: { get_param: stack_subnet } } ]
+
+  # loadbalancer port with static IP
+  lb_port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_resource: lb_net }
+      security_groups: [ basic, prometheus, { get_resource: lb_securitygroup }, { get_resource: sr_securitygroup } ]
+      fixed_ips: [ { subnet_id: { get_resource: lb_subnet }, ip_address: { get_param: loadbalancer_ip }} ]
+
+  # loadbalancer
+  loadbalancer_server:
+    type: loadbalancer.yaml
+    properties:
+      port_name: { get_resource: lb_port }
+      lb_ip: { get_param: loadbalancer_ip }
+      project_id: { get_param: "OS::project_id" }
+      stack_id: { get_param: "OS::stack_id" }
+      stack_name: { get_param: "OS::stack_name" }
+      
+  # scale policys
+  scaleup_policy:
+    type: OS::Heat::ScalingPolicy
+    properties:
+      adjustment_type: change_in_capacity
+      auto_scaling_group_id: { get_resource: autoscaling_group }
+      cooldown: 60
+      scaling_adjustment: 1
+
+  scaledown_policy:
+    type: OS::Heat::ScalingPolicy
+    properties:
+      adjustment_type: change_in_capacity
+      auto_scaling_group_id: { get_resource: autoscaling_group }
+      cooldown: 60
+      scaling_adjustment: -1
+
+  # scaling group with backend servers
+  autoscaling_group:
+    type: OS::Heat::AutoScalingGroup
+    properties:
+      min_size: 1
+      max_size: 2
+      resource:      
+        type: backend.yaml
+        properties:
+          network: { get_resource: lb_net }
+          subnet: { get_resource: lb_subnet }
+          sc_group: { get_resource: sr_securitygroup }
+          lb_ip: { get_param: loadbalancer_ip }
+
+  # floating IP assosiation
+  association:
+    type: OS::Neutron::FloatingIPAssociation
+    properties:
+      floatingip_id: { get_resource: floating_ip }
+      port_id: { get_resource: lb_port }
+
+

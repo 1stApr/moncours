@@ -1,0 +1,44 @@
+# https://docs.openstack.org/ceilometer/train/admin/telemetry-data-pipelines.html
+---
+sources:
+    - name: meter_source
+      meters:
+        - "*"
+      sinks:
+        - meter_sink
+    - name: network_source
+      meters:
+        - "network.incoming.bytes"
+        - "network.incoming.packets"
+        - "network.outgoing.bytes"
+        - "network.outgoing.packets"
+      sinks:
+        - network_sink
+
+sinks:
+    - name: meter_sink
+      publishers:
+<% if @ceilometer_polling_interval == 1 -%>
+      - gnocchi://?filter_project=service&archive_policy=ceilometer-high-rate
+<% end -%>    
+<% if @ceilometer_polling_interval == 60 -%>
+        - gnocchi://?filter_project=service&archive_policy=ceilometer-medium-rate
+<% end -%>    
+<% if @ceilometer_polling_interval == 300 -%>
+        - gnocchi://?filter_project=service&archive_policy=ceilometer-low-rate
+<% end -%>    
+  
+
+    - name: network_sink
+      publishers:
+<% if @ceilometer_polling_interval == 1 -%>
+        - gnocchi://?filter_project=service&archive_policy=ceilometer-high-rate
+<% end -%>    
+<% if @ceilometer_polling_interval == 60 -%>
+        - gnocchi://?filter_project=service&archive_policy=ceilometer-medium-rate
+<% end -%>    
+<% if @ceilometer_polling_interval == 300 -%>
+        - gnocchi://?filter_project=service&archive_policy=ceilometer-low-rate
+<% end -%>    
+
+        

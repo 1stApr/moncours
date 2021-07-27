@@ -1,0 +1,85 @@
+[DEFAULT]
+admin_endpoint = http://<%= @management_ip %>/identity_admin
+public_endpoint = http://<%= @management_ip %>/identity
+log_dir = <%= @logs_dir %>/<%= @service %>
+max_token_size = 16384
+
+
+[identity]
+password_hash_rounds = 4
+driver = sql
+
+
+[catalog]
+driver = sql
+
+
+[assignment]
+driver = sql
+
+
+[role]
+driver = sql
+
+
+[resource]
+driver = sql
+
+
+[database]
+connection = mysql+pymysql://<%= @service %>:<%= @password %>@<%= @dbhost %>/<%= @service %>?charset=utf8
+
+
+[extra_headers]
+Distribution = Ubuntu
+
+
+[identity]
+driver = sql
+
+
+[cache]
+enabled = true
+memcached_servers = <%= @memcached_ip %>:11211
+backend = dogpile.cache.memcached
+
+
+[oslo_messaging_rabbit]
+amqp_durable_queues = true
+rabbit_retry_interval = 1
+rabbit_retry_backoff = 2
+rabbit_max_retries = 0
+rabbit_ha_queues = true
+
+
+[oslo_messaging_notifications]
+transport_url = rabbit://<%= @service %>:<%= @password %>@<%= @rabbitmq_ip %>:5672/
+
+
+
+[oslo_policy]
+#policy_file = <%= @policy_file %>
+
+
+[token]
+provider = fernet
+
+
+[credential]
+key_repository = /etc/keystone/credential-keys/
+
+
+[fernet_tokens]
+key_repository = /etc/keystone/fernet-keys/
+max_active_keys = 3
+# token_expiration = 24                 # in hours
+# rotation_frequency = 6
+# max_active_keys = (token_expiration / rotation_frequency) + 2
+
+
+[security_compliance]
+#unique_last_password_count = 2
+#lockout_duration = 10
+#lockout_failure_attempts = 2
+
+

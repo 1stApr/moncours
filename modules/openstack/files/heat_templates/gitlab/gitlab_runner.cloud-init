@@ -1,0 +1,32 @@
+#cloud-config
+package_update: true
+
+
+packages:
+- curl
+
+
+write_files:
+# disable cloud init
+- path: /etc/cloud/cloud-init.disabled
+  owner: root:root
+# Always install packages with no recommends enabled  
+- content: |
+    APT::Install-Recommends "0";
+    APT::Install-Suggests "0";
+  path: /etc/apt/apt.conf.d/01norecommend
+# Pin apt to use gitlab runner package from gitlab.com instead from debian repo  
+- content: |
+    Explanation: Prefer GitLab provided packages over the Debian native ones
+    Package: gitlab-runner
+    Pin: origin packages.gitlab.com
+    Pin-Priority: 1001
+  path: /etc/apt/preferences.d/pin-gitlab-runner.pref  
+
+
+runcmd:
+- curl -L https://packages.gitlab.com/install/repositories/runner/gitlab-runner/script.deb.sh | sudo bash
+- export GITLAB_RUNNER_DISABLE_SKEL=true; apt install gitlab-runner -y
+- systemctl enable gitlab-runner
+- systemctl start gitlab-runner
+

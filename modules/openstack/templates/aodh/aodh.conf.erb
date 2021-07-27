@@ -1,0 +1,79 @@
+[DEFAULT]
+transport_url = rabbit://<%= @service %>:<%= @password %>@<%= @rabbitmq_ip %>:5672/
+
+auth_strategy = keystone
+
+log_dir = <%= @logs_dir %>/<%= @service %>
+
+
+[api]
+[coordination]
+
+
+[cors]
+allowed_origin = http://<%= @management_ip %>
+
+
+[database]
+connection = mysql+pymysql://<%= @service %>:<%= @password %>@<%= @dbhost %>/<%= @service %>?charset=utf8
+
+
+[evaluator]
+workers = 1
+
+
+[healthcheck]
+
+
+[keystone_authtoken]
+#cafile = /opt/stack/data/ca-bundle.pem
+project_domain_name = Default
+project_name = service
+user_domain_name = Default
+username = <%= @service %>
+password = <%= @password %>
+auth_url = http://<%= @management_ip %>/identity
+www_authenticate_uri = http://<%= @management_ip %>/identity
+auth_type = password
+memcached_servers = <%= @memcached_ip %>:11211
+region_name = <%= @region %>
+service_token_roles_required = True
+
+
+[listener]
+workers = 1
+
+
+[notifier]
+workers = 1
+
+
+[oslo_messaging_amqp]
+[oslo_messaging_kafka]
+
+[oslo_messaging_notifications]
+driver = messagingv2
+
+
+[oslo_messaging_rabbit]
+[oslo_middleware]
+[oslo_policy]
+
+
+[service_credentials]
+#cafile = /opt/stack/data/ca-bundle.pem
+project_domain_name = Default
+project_name = service
+user_domain_name = Default
+username = <%= @service %>
+password = <%= @password %>
+auth_url = http://<%= @management_ip %>/identity
+www_authenticate_uri = http://<%= @management_ip %>/identity
+auth_type = password
+memcached_servers = <%= @memcached_ip %>:11211
+region_name = <%= @region %>
+service_token_roles_required = True
+interface = public
+
+
+[service_types]

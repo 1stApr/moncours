@@ -1,0 +1,61 @@
+[DEFAULT]
+transport_url = rabbit://<%= @service %>:<%= @password %>@<%= @rabbitmq_ip %>:5672/
+
+pipeline_cfg_file = /etc/<%= @service %>/pipeline.yaml
+rootwrap_config = /etc/<%= @service %>/rootwrap.conf
+
+log_dir = <%= @logs_dir %>/<%= @service %>
+
+
+[compute]
+[coordination]
+[event]
+[hardware]
+[ipmi]
+[meter]
+[notification]
+
+
+[oslo_concurrency]
+lock_path = <%= @service_dir %>/<%= @service %>/tmp
+
+
+[oslo_messaging_amqp]
+[oslo_messaging_kafka]
+
+
+[oslo_messaging_notifications]
+driver = messagingv2
+
+
+[oslo_messaging_rabbit]
+
+
+[polling]
+cfg_file = /etc/<%= @service %>/polling.yaml
+
+
+[publisher]
+[publisher_notifier]
+[rgw_admin_credentials]
+[rgw_client]
+
+
+[service_credentials]
+project_domain_name = Default
+project_name = service
+user_domain_name = Default
+username = <%= @service %>
+password = <%= @password %>
+auth_url = http://<%= @management_ip %>/identity
+www_authenticate_uri = http://<%= @management_ip %>/identity
+auth_type = password
+memcached_servers = <%= @memcached_ip %>:11211
+region_name = <%= @region %>
+service_token_roles_required = True
+interface = public
+
+
+[service_types]
+[vmware]
+[xenapi]

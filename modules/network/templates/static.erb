@@ -1,0 +1,14 @@
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    <%= @interface%>:
+      dhcp4: no
+      addresses: [<%= @ip %>]
+<% if defined?(@gw) -%>
+      gateway4: <%= @gw %>
+<% end -%>
+<% if defined?(@dns) -%>
+      nameservers:
+        addresses: [<%= @dns %>]
+<% end -%>

@@ -1,0 +1,33 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Copy puppet code",
+            "type": "shell",
+            "command": "rsync -r -a -v -e ssh --exclude '.*' --delete /home/alexeysmovzh/openstack alex@10.64.30.100:/home/alex",
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared",
+                "focus": true
+            },
+        },
+        {
+            "label": "Run puppet code",
+            "type": "shell",
+            "command": "ssh alex@10.64.30.100 'echo alex | sudo -S /opt/puppetlabs/bin/puppet apply --hiera_config /home/alex/openstack/hiera.yaml --modulepath /home/alex/openstack/modules /home/alex/openstack/manifests/site.pp'",
+            "dependsOn": ["Copy puppet code"],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "focus": true
+            },
+        }
+    ]
+}
+

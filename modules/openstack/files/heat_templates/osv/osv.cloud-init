@@ -1,0 +1,33 @@
+#cloud-config
+
+users:
+- default
+- name: osv
+  groups: sudo
+  homedir: /home/osv
+  shell: /bin/bash
+  lock-passwd: false
+  passwd: $6$saltsalt$OpvVlYPY6YYXhosOAmr.a7PTpqaXv75xsI0bYfRKG3FGAOBgD32Mz/WXe.YKIKWhBVhh4DeNh281JyPVIBlKD0
+  sudo: ['ALL=(ALL) NOPASSWD:ALL']
+ssh_pwauth: true
+
+
+package_update: true
+
+packages:
+- git
+- python3
+
+
+write_files:
+- path: /etc/cloud/cloud-init.disabled
+  owner: root:root
+
+
+runcmd:
+- cd /home/osv
+- git clone https://github.com/cloudius-systems/osv.git
+- cd /home/osv/osv 
+- git submodule update --init --recursive
+- /home/osv/osv/scripts/setup.py
+

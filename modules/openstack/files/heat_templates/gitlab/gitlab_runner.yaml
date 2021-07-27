@@ -1,0 +1,69 @@
+heat_template_version: 2018-08-31
+description: >
+  Launch Linux instance with GitLab runner.
+
+
+parameters:
+  our_net:
+    type: string
+    description: Network from connections to Runner server are allowed. Usually our private network entirely.
+  network:
+    type: string
+    description: Existed network to attach instance
+  subnet:
+    type: string
+    description: Subnet name
+  image:
+    type: string
+    default: debian-10.3.0-amd64
+  flavor:
+    type: string
+    default: medium
+  key_name:
+    type: string
+    description: SSH key name 
+    default: alex
+
+
+resources:
+
+  # allow Runner in traffic
+  securitygroup:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      description: Allow Runner traffic
+      name: gitlab_runner_rules
+      rules: [ { direction: ingress, ethertype: IPv4, port_range_min: 8080, port_range_max: 8080, protocol: tcp, remote_ip_prefix: { get_param: our_net } },
+               { direction: ingress, ethertype: IPv4, port_range_min: 8443, port_range_max: 8443, protocol: tcp, remote_ip_prefix: { get_param: our_net } } ]
+
+  port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: network }
+      security_groups: [ basic, { get_resource: securitygroup } ]
+      fixed_ips: 
+      - subnet_id: { get_param: subnet }
+
+  server:
+    type: OS::Nova::Server
+    properties:
+      # compose instance name from 'gitlab_runner' prefix
+      # and number from last octet of instance IP address
+      name: 
+        list_join: ['', ["gitlab_runner_", str_split: ['.', get_attr: [port, fixed_ips, 0, ip_address], 3]]]
+      image: { get_param: image}
+      flavor: { get_param: flavor}
+      key_name: { get_param: key_name }
+      networks:
+        - port: { get_resource: port }   
+      user_data_format: RAW
+      user_data:
+        get_file: gitlab_runner.cloud-init     
+
+outputs:
+  instance_name:
+    description: Name of the instance.
+    value: { get_attr: [ server, name ] }
+  instance_ip:
+    description: IP address of the instance.
+    value: { get_attr: [ server, first_address ] }

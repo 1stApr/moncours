@@ -1,0 +1,66 @@
+heat_template_version: 2018-08-31
+description: >
+  Launch Linux instance as LoadBalancer.
+  Gobetween (gobetween.io) used for loadbalancing.
+  HashiCorp Consul (consul.io) for service discovery.
+  This template require network port passed as parameter
+  with preconfigured static IP address.
+
+
+parameters:
+  port_name:
+    type: string
+    description: Network port for VM with preconfigured static IP address
+  lb_ip:
+    type: string
+    description: LoadBalancer static IP address
+  image:
+    type: string
+    default: ubuntu-18.04-minimal-amd64             
+  flavor:
+    type: string
+    default: medium
+  key_name:
+    type: string
+    description: SSH key name 
+    default: alex
+  autoscaling:
+    type: string
+    default: 'true'
+  project_id:
+    type: string      
+  stack_id:
+    type: string      
+  stack_name:
+    type: string      
+
+
+resources:
+  server:
+    type: OS::Nova::Server
+    properties:
+      name: 
+        list_join: ['', ["loadbalancer_", get_param: stack_name ]]
+      image: { get_param: image}
+      flavor: { get_param: flavor}
+      key_name: { get_param: key_name }
+      metadata: { "prometheus_autoscaling": { get_param: autoscaling},
+                  "stack_id": { get_param: stack_id },
+                  "project_id": { get_param: project_id },
+                  "stack_name": { get_param: stack_name } }      
+      networks:
+        - port: { get_param: port_name }        
+      user_data_format: RAW
+      user_data:
+        str_replace:
+          template: { get_file: loadbalancer.cloud-init }
+          params:
+            $public_ip: { get_param: lb_ip }
+
+outputs:
+  instance_name:
+    description: Name of the instance.
+    value: { get_attr: [ server, name ] }
+  instance_ip:
+    description: IP address of the instance.
+    value: { get_param: lb_ip }

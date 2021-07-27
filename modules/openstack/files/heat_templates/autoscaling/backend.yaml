@@ -1,0 +1,68 @@
+heat_template_version: 2018-08-31
+description: >
+  Launch Linux instance with Apache2 web-server for backend emulation.
+  HashiCorp Consul (consul.io) used for service discovery and registering
+  Apache on loadbalancer.
+
+
+parameters:
+  network:
+    type: string
+    description: Existed network to attach instance
+  subnet:
+    type: string
+    description: Subnet name
+  image:
+    type: string
+    default: ubuntu-18.04-minimal-amd64             
+  flavor:
+    type: string
+    default: medium
+  key_name:
+    type: string
+    description: SSH key name 
+    default: alex
+  sc_group:
+    type: string
+    description: Security group with rules for backend traffic control
+  lb_ip:
+    type: string
+    description: LoadBalancer IP address
+
+
+resources:
+  port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: network }
+      security_groups: [ { get_param: sc_group } ]
+      fixed_ips: 
+      - subnet_id: { get_param: subnet }
+
+  server:
+    type: OS::Nova::Server
+    properties:
+      # compile instance name from 'backend_' prefix
+      # and number from last octet of instance IP address
+      name: 
+        list_join: ['', ["backend_", str_split: ['.', get_attr: [port, fixed_ips, 0, ip_address], 3]]]
+      image: { get_param: image}
+      flavor: { get_param: flavor}
+      key_name: { get_param: key_name }
+      networks:
+        - port: { get_resource: port }        
+      user_data_format: RAW
+      user_data:
+        str_replace:
+          template: { get_file: backend.cloud-init }
+          params:
+            $lb_ip: { get_param: lb_ip }
+            $public_ip: { get_attr: [port, fixed_ips, 0, ip_address] }
+
+outputs:
+  instance_name:
+    description: Name of the instance.
+    value: { get_attr: [ server, name ] }
+  instance_ip:
+    description: IP address of the instance.
+    value: { get_attr: [ server, first_address ] }

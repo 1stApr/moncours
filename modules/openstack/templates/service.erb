@@ -1,0 +1,95 @@
+[Unit]
+<% if @unit == 'keystone-public' %>Description=Keystone Public<% end -%>
+<% if @unit == 'keystone-admin' %>Description=Keystone Admin<% end -%>
+<% if @unit == 'cinder-api' %>Description=Cinder API<% end -%>
+<% if @unit == 'cinder-backup' %>Description=Cinder Backup<% end -%>
+<% if @unit == 'cinder-scheduler' %>Description=Cinder Scheduler<% end -%>
+<% if @unit == 'cinder-volume' %>Description=Cinder Volume<% end -%>
+<% if @unit == 'glance-api' %>Description=Glance Api<% end -%>
+<% if @unit == 'glance-registry' %>Description=Glance Registry<% end -%>
+<% if @unit == 'heat-api' %>Description=Heat Api<% end -%>
+<% if @unit == 'heat-api-cfn' %>Description=Heat Api CloudFormation<% end -%>
+<% if @unit == 'heat-engine' %>Description=Heat Engine<% end -%>
+<% if @unit == 'neutron-server' %>Description=Neutron Server<% end -%>
+<% if @unit == 'neutron-metadata-agent' %>Description=Metadata Agent<% end -%>
+<% if @unit == 'neutron-linuxbridge-agent' %>Description=Linuxbridge Agent<% end -%>
+<% if @unit == 'neutron-l3-agent' %>Description=L3 Agent<% end -%>
+<% if @unit == 'neutron-dhcp-agent' %>Description=DHCP Agent<% end -%>
+<% if @unit == 'nova-api' %>Description=Nova Api<% end -%>
+<% if @unit == 'nova-compute' %>Description=Nova Compute<% end -%>
+<% if @unit == 'nova-conductor-cell1' %>Description=Nova Conductor Cell1<% end -%>
+<% if @unit == 'nova-conductor' %>Description=Nova Conductor<% end -%>
+<% if @unit == 'nova-metadata' %>Description=Nova Metadata<% end -%>
+<% if @unit == 'nova-scheduler' %>Description=Nova Scheduler<% end -%>
+<% if @unit == 'nova-spicehtml5proxy' %>Description=Nova SpiceHTML5Proxy<% end -%>
+<% if @unit == 'placement' %>Description=Placement API<% end -%>
+<% if @unit == 'murano-api' %>Description=Murano Api<% end -%>
+<% if @unit == 'murano-engine' %>Description=Murano Engine<% end -%>
+<% if @unit == 'gnocchi-api' %>Description=Gnocchi Database Api<% end -%>
+<% if @unit == 'ceilometer-agent-central' %>Description=Ceilometer Central Management Agent<% end -%>
+<% if @unit == 'ceilometer-agent-notification' %>Description=Ceilometer Notification Agent<% end -%>
+<% if @unit == 'ceilometer-agent-compute' %>Description=Ceilometer Compute Node Agent<% end -%>
+<% if @unit == 'aodh-api' %>Description=Telemetry Alarming Api<% end -%>
+<% if @unit == 'aodh-evaluator' %>Description=Telemetry Alarming Evaluator<% end -%>
+<% if @unit == 'aodh-listener' %>Description=Telemetry Alarming Listener<% end -%>
+<% if @unit == 'aodh-notifier' %>Description=Telemetry Alarming Notifier<% end -%>
+
+<% if @unit == 'keystone-public' or @unit == 'keystone-admin'%>
+After=network.target syslog.target rabbitmq-server.service memcached.service mariadb.service 
+<% else %>
+After=network.target syslog.target rabbitmq-server.service memcached.service mariadb.service keystone-public.service keystone-admin.service
+<% end -%>
+
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+RestartForceExitStatus = 100
+TimeoutStopSec = 300
+Restart=always
+ExecReload = /bin/kill -HUP $MAINPID
+KillSignal=SIGQUIT
+KillMode = process
+# Type=notify # there are issues with glance-registry, fail to start due multiple spawned processes
+StandardError=syslog
+NotifyAccess=all
+User=<%= @service %>
+Group=<%= @service %>
+RuntimeDirectory=openstack-<%= @unit %>
+<% if @unit == 'keystone-public' %>ExecStart=/usr/local/bin/uwsgi --ini /etc/keystone/uwsgi-keystone-public.ini<% end -%>
+<% if @unit == 'keystone-admin' %>ExecStart=/usr/local/bin/uwsgi --ini /etc/keystone/uwsgi-keystone-admin.ini<% end -%>
+<% if @unit == 'cinder-api' %>ExecStart=/usr/local/bin/uwsgi --procname-prefix cinder-api --ini /etc/cinder/uwsgi-cinder-api.ini<% end -%>
+<% if @unit == 'cinder-backup' %>ExecStart=/usr/local/bin/cinder-backup --config-file /etc/cinder/cinder.conf<% end -%>
+<% if @unit == 'cinder-scheduler' %>ExecStart=/usr/local/bin/cinder-scheduler --config-file /etc/cinder/cinder.conf<% end -%>
+<% if @unit == 'cinder-volume' %>ExecStart=/usr/local/bin/cinder-volume --config-file /etc/cinder/cinder.conf<% end -%>
+<% if @unit == 'glance-api' %>ExecStart=/usr/local/bin/uwsgi --ini /etc/glance/uwsgi-glance-api.ini<% end -%>
+<% if @unit == 'glance-registry' %>ExecStart=/usr/local/bin/glance-registry --config-file=/etc/glance/glance-registry.conf<% end -%>
+<% if @unit == 'heat-api' %>ExecStart=/usr/local/bin/uwsgi --ini /etc/heat/uwsgi-heat-api.ini<% end -%>
+<% if @unit == 'heat-api-cfn' %>ExecStart=/usr/local/bin/uwsgi --ini /etc/heat/uwsgi-heat-api-cfn.ini<% end -%>
+<% if @unit == 'heat-engine' %>ExecStart=/usr/local/bin/heat-engine --config-file /etc/heat/heat.conf<% end -%>
+<% if @unit == 'neutron-server' %>ExecStart=/usr/local/bin/neutron-server --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/neutron_vpnaas.conf --config-file /etc/neutron/plugins/ml2/ml2_conf.ini<% end -%>
+<% if @unit == 'neutron-metadata-agent' %>ExecStart=/usr/local/bin/neutron-metadata-agent --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/metadata_agent.ini<% end -%>
+<% if @unit == 'neutron-linuxbridge-agent' %>ExecStart=/usr/local/bin/neutron-linuxbridge-agent --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/linuxbridge_agent.ini<% end -%>
+<% if @unit == 'neutron-l3-agent' %>ExecStart=/usr/local/bin/neutron-l3-agent --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/l3_agent.ini<% end -%>
+<% if @unit == 'neutron-dhcp-agent' %>ExecStart=/usr/local/bin/neutron-dhcp-agent --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/dhcp_agent.ini<% end -%>
+<% if @unit == 'nova-api' %>ExecStart=/usr/local/bin/uwsgi --procname-prefix nova-api --ini /etc/nova/uwsgi-nova-api.ini<% end -%>
+<% if @unit == 'nova-compute' %>ExecStart=/usr/local/bin/nova-compute --config-file /etc/nova/nova-compute.conf<% end -%>
+<% if @unit == 'nova-conductor-cell1' %>ExecStart=/usr/local/bin/nova-conductor --config-file /etc/nova/nova-cell1.conf<% end -%>
+<% if @unit == 'nova-conductor' %>ExecStart=/usr/local/bin/nova-conductor --config-file /etc/nova/nova.conf<% end -%>
+<% if @unit == 'nova-metadata' %>ExecStart=/usr/local/bin/nova-api-metadata --config-file /etc/nova/nova-cell1.conf<% end -%>
+<% if @unit == 'nova-scheduler' %>ExecStart=/usr/local/bin/nova-scheduler --config-file /etc/nova/nova.conf<% end -%>
+<% if @unit == 'nova-spicehtml5proxy' %>ExecStart=/usr/local/bin/nova-spicehtml5proxy --config-file /etc/nova/nova-cell1.conf --web /usr/share/spice-html5<% end -%>
+<% if @unit == 'placement' %>ExecStart=/usr/local/bin/uwsgi --procname-prefix placement --ini /etc/placement/uwsgi-placement.ini<% end -%>
+<% if @unit == 'murano-api' %>ExecStart=/usr/local/bin/uwsgi --procname-prefix murano-api --ini /etc/murano/uwsgi-murano-api.ini<% end -%>
+<% if @unit == 'murano-engine' %>ExecStart=/usr/local/bin/murano-engine --config-file /etc/murano/murano.conf<% end -%>
+<% if @unit == 'gnocchi-api' %>ExecStart=/usr/local/bin/uwsgi --procname-prefix gnocchi-api --ini /etc/gnocchi/uwsgi-gnocchi-api.ini<% end -%>
+<% if @unit == 'gnocchi-metricd' %>ExecStart=/usr/local/bin/gnocchi-metricd --config-file /etc/gnocchi/gnocchi.conf<% end -%>
+<% if @unit == 'ceilometer-agent-central' %>ExecStart=/usr/local/bin/ceilometer-polling --polling-namespace central --config-file /etc/ceilometer/ceilometer.conf<% end -%>
+<% if @unit == 'ceilometer-agent-notification' %>ExecStart=/usr/local/bin/ceilometer-agent-notification --config-file /etc/ceilometer/ceilometer.conf<% end -%>
+<% if @unit == 'ceilometer-agent-compute' %>ExecStart=/usr/local/bin/ceilometer-polling --polling-namespace compute --config-file /etc/ceilometer/ceilometer.conf<% end -%>
+<% if @unit == 'aodh-api' %>ExecStart=/usr/local/bin/uwsgi --procname-prefix aodh-api --ini /etc/aodh/uwsgi-aodh-api.ini<% end -%>
+<% if @unit == 'aodh-evaluator' %>ExecStart=/usr/local/bin/aodh-evaluator --config-file /etc/aodh/aodh.conf<% end -%>
+<% if @unit == 'aodh-listener' %>ExecStart=/usr/local/bin/aodh-listener --config-file /etc/aodh/aodh.conf<% end -%>
+<% if @unit == 'aodh-notifier' %>ExecStart=/usr/local/bin/aodh-notifier --config-file /etc/aodh/aodh.conf<% end -%>
+

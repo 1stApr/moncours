@@ -1,0 +1,35 @@
+heat_template_version: 2018-08-31
+description: Launch two instances. One with Gitlab CE, other with Gitlab Runner.
+
+
+parameters:
+  our_net:
+    type: string
+    description: Network from connections to Runner server are allowed. Usually our private network entirely.
+    default: 10.64.0.0/16
+  network:
+    type: string
+    description: Existed network to attach instance
+    default: infrastructure
+  subnet:
+    type: string
+    description: Subnet name
+    default: infr-subnet
+
+
+resources:
+  # Gitlab CE
+  gitlab_ce:
+    type: gitlab_ce.yaml
+    properties:
+      our_net: { get_param: our_net }
+      network: { get_param: network }
+      subnet: { get_param: subnet }      
+
+  # Gitlab Runner
+  gitlab_runner:
+    type: gitlab_runner.yaml
+    properties:
+      our_net: { get_param: our_net }
+      network: { get_param: network }
+      subnet: { get_param: subnet }

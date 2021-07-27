@@ -1,0 +1,78 @@
+# https://raw.githubusercontent.com/openstack/glance/master/etc/glance-api.conf
+#
+[DEFAULT]
+public_endpoint = http://<%=  @management_ip %>/image
+registry_host = <%=  @management_ip %>
+enable_v1_api = False
+transport_url = rabbit://<%= @service %>:<%= @password %>@<%= @rabbitmq_ip %>:5672/
+#image_cache_dir = /opt/stack/data/glance/cache/
+log_dir = <%= @logs_dir %>/<%= @service %>
+
+
+[cinder]
+[cors]
+allowed_origin = http://<%= @management_ip %>
+
+
+[database]
+connection = mysql+pymysql://<%= @service %>:<%= @password %>@<%= @dbhost %>/<%= @service %>?charset=utf8
+
+
+[file]
+[glance.store.http.store]
+[glance.store.rbd.store]
+[glance.store.sheepdog.store]
+[glance.store.swift.store]
+[glance.store.vmware_datastore.store]
+
+
+[glance_store]
+enabled_backends = file,http
+default_backend = file
+filesystem_store_datadir = <%= @image_store %>
+
+
+[image_format]
+
+
+[keystone_authtoken]
+#cafile = /opt/stack/data/ca-bundle.pem
+project_domain_name = Default
+project_name = service
+user_domain_name = Default
+username = <%= @service %>
+password = <%= @password %>
+auth_url = http://<%= @management_ip %>/identity
+www_authenticate_uri = http://<%= @management_ip %>/identity
+auth_type = password
+memcached_servers = <%= @memcached_ip %>:11211
+region_name = <%= @region %>
+service_token_roles_required = True
+
+
+[oslo_concurrency]
+lock_path = <%= @service_dir %>/<%= @service %>/tmp
+
+
+[oslo_messaging_amqp]
+[oslo_messaging_kafka]
+
+
+[oslo_messaging_notifications]
+driver = messagingv2
+
+
+[oslo_messaging_rabbit]
+[oslo_middleware]
+[oslo_policy]
+
+[paste_deploy]
+flavor = keystone
+
+[profiler]
+[store_type_location_strategy]
+[task]
+[taskflow_executor]
+#conversion_format = raw
+
+

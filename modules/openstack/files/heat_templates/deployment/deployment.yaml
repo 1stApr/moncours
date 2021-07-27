@@ -1,0 +1,40 @@
+heat_template_version: 2018-08-31
+description: Stack creates Jenkins automation server and Gogs Git server instances.
+
+
+parameters:
+  our_net:
+    type: string
+    description: Network from connections to Runner server are allowed. Usually our private network entirely.
+    default: 10.64.0.0/16
+  network:
+    type: string
+    description: Existed network to attach instance
+    default: infrastructure
+  subnet:
+    type: string
+    description: Subnet name
+    default: infr-subnet
+  db_password:
+    type: string
+    description: MariaDB password for root user on Gogs instance
+    default: alex
+  
+
+resources:
+  # Gogs
+  gogs:
+    type: gogs.yaml
+    properties:
+      our_net: { get_param: our_net }
+      network: { get_param: network }
+      subnet: { get_param: subnet }    
+      db_password: { get_param: db_password }      
+
+  # Jenkins
+  jenkins:
+    type: jenkins.yaml
+    properties:
+      our_net: { get_param: our_net }
+      network: { get_param: network }
+      subnet: { get_param: subnet }

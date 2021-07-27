@@ -1,0 +1,18 @@
+[DEFAULT]
+metadata_workers = 2
+nova_metadata_host = <%= @management_ip %>
+nova_metadata_port = <%= @nova_port_meta %>
+metadata_proxy_shared_secret = <%= @metadata_secret %>
+
+nova_metadata_insecure = true
+nova_metadata_protocol = http
+
+
+[agent]
+
+
+[cache]
+memcache_servers = <%= @memcached_ip %>:11211
+backend = dogpile.cache.memcached
+enabled = true
+

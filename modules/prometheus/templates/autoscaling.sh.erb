@@ -1,0 +1,28 @@
+#!/bin/bash
+#
+# openstack stack resource show <stack id> cirros_scaleup_policy
+#
+# http://127.0.0.1/orchestration/v1/<project_id>/stacks/<stack_name>/<stack_id>/resources/<policy_name>/signal
+#
+# token=$(openstack token issue -c id -f value)
+# curl -s -H "X-Auth-Token: $token" -X POST -i -k http://127.0.0.1/orchestration/v1/f611f36fff8545fb8c5048fff60126ba/stacks/autoscaling/c18978ef-8a0b-4428-beb1-104cc61f015f/resources/cirros_scaleup_policy/signal
+#
+
+if [[ "$AMX_STATUS" != "firing" ]]; then
+    exit 0
+fi
+
+# Load Openstack credentials
+source <%= @openstack_credentials %>
+
+# issue token
+token=$(openstack token issue -c id -f value)
+
+
+# send upscale signal to OpenStack policy
+if [[ "$AMX_ALERT_1_LABEL_severity" == "upscale" ]]; then
+
+    url="http://127.0.0.1/orchestration/v1/$AMX_ALERT_1_LABEL_tenant_project_id/stacks/$AMX_ALERT_1_LABEL_tenant_stack_name/$AMX_ALERT_1_LABEL_tenant_stack_id/resources/scaleup_policy/signal"
+    curl -s -H "X-Auth-Token: $token" -X POST -i -k $url
+
+fi

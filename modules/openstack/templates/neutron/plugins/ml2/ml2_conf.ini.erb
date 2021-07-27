@@ -1,0 +1,42 @@
+[DEFAULT]
+
+
+[ml2]
+type_drivers = flat,vlan
+tenant_network_types = vlan
+mechanism_drivers = linuxbridge,l2population
+extension_drivers = port_security
+
+
+[ml2_type_flat]
+flat_networks = provider
+
+
+[ml2_type_geneve]
+[ml2_type_gre]
+
+
+[ml2_type_vlan]
+network_vlan_ranges = provider:100:200
+
+
+[ml2_type_vxlan]
+vni_ranges = 5000:10000
+
+
+[ovs_driver]
+
+
+[securitygroup]
+enable_ipset = true
+
+
+[sriov_driver]
+
+
+[agent]
+extensions = fwaas_v2
+
+
+[fwaas]
+firewall_l2_driver = noop

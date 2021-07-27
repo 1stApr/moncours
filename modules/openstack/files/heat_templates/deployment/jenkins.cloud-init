@@ -1,0 +1,30 @@
+#cloud-config
+package_update: true
+
+
+packages:
+- wget
+- gnupg
+- sshpass
+- git
+
+
+write_files:
+# disable cloud init
+- path: /etc/cloud/cloud-init.disabled
+  owner: root:root
+# Always install packages with no recommends enabled  
+- content: |
+    APT::Install-Recommends "0";
+    APT::Install-Suggests "0";
+  path: /etc/apt/apt.conf.d/01norecommend
+
+
+runcmd:
+- wget -q -O - https://pkg.jenkins.io/debian-stable/jenkins.io.key | apt-key add -
+- sudo sh -c 'echo deb https://pkg.jenkins.io/debian-stable binary/ > /etc/apt/sources.list.d/jenkins.list'
+- apt update
+- apt install openjdk-11-jre jenkins -y
+- systemctl enable jenkins
+- systemctl start jenkins
+

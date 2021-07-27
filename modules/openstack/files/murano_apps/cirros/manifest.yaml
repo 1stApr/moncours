@@ -1,0 +1,9 @@
+Format: Heat.HOT/1.0
+Type: Application
+FullName: cloud.openstack.CirrOS
+Name: CirrOS instance
+Description: "Heat template to deploy single instance based on CirrOS image"
+Author: Alexey Smovzh
+Tags:
+  - hot-based
+Logo: logo.png

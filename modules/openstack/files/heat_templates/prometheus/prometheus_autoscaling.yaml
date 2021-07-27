@@ -1,0 +1,33 @@
+heat_template_version: 2018-08-31
+description: Launch Dumb Linux instance in autoscaling group
+
+
+resources:
+
+  scaleup_policy:
+    type: OS::Heat::ScalingPolicy
+    properties:
+      adjustment_type: change_in_capacity
+      auto_scaling_group_id: { get_resource: autoscaling_group }
+      cooldown: 60
+      scaling_adjustment: 1
+
+  scaledown_policy:
+    type: OS::Heat::ScalingPolicy
+    properties:
+      adjustment_type: change_in_capacity
+      auto_scaling_group_id: { get_resource: autoscaling_group }
+      cooldown: 60
+      scaling_adjustment: -1
+
+  autoscaling_group:
+    type: OS::Heat::AutoScalingGroup
+    properties:
+      min_size: 1
+      max_size: 3
+      resource:      
+        type: prometheus_client.yaml
+        properties:
+          project_id: { get_param: "OS::project_id" }
+          stack_id: { get_param: "OS::stack_id" }
+          stack_name: { get_param: "OS::stack_name" }

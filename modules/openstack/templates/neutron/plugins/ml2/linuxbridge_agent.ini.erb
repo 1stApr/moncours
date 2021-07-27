@@ -1,0 +1,30 @@
+[DEFAULT]
+
+
+[agent]
+prevent_arp_spoofing = true
+
+
+[linux_bridge]
+<% if @network_type == 'bridge' -%>
+physical_interface_mappings = provider:<%= @public_interface %>
+bridge_mappings = provider:<%= @public_interface %>
+<% end -%>   
+<% if @network_type == 'vlan' -%>
+physical_interface_mappings = provider:bond-ex
+<% end -%>   
+
+
+[network_log]
+
+
+[securitygroup]
+enable_security_group = true
+firewall_driver = neutron.agent.linux.iptables_firewall.IptablesFirewallDriver
+
+
+[vxlan]
+enable_vxlan = true
+local_ip = <%= @public_ip %>
+l2_population = true
+

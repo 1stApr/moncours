@@ -1,0 +1,59 @@
+heat_template_version: 2018-08-31
+description: >
+  Deploys OSv image building tool set in virtual instance.
+  This instance needs at least 4Gb of RAM, 20Gb of disk space and 2 CPU cores.
+
+
+parameters:
+  network:
+    type: string
+    description: Existed network to attach instance
+    default: infrastructure
+  subnet:
+    type: string
+    description: Subnet name
+    default: infr-subnet
+  image:
+    type: string
+    default: ubuntu-18.04-minimal-amd64             
+  flavor:
+    type: string
+    default: db.large
+  key_name:
+    type: string
+    description: SSH key name 
+    default: alex
+
+
+resources:
+  port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: network }
+      fixed_ips: 
+      - subnet_id: { get_param: subnet }
+
+  server:
+    type: OS::Nova::Server
+    properties:
+      # compile instance name from 'osv_' prefix
+      # and number from last octet of instance IP address
+      name: 
+        list_join: ['', ["osv_", str_split: ['.', get_attr: [port, fixed_ips, 0, ip_address], 3]]]
+      image: { get_param: image}
+      flavor: { get_param: flavor}
+      key_name: { get_param: key_name }
+      networks:
+        - port: { get_resource: port }        
+      user_data_format: RAW
+      user_data:
+        get_file: osv.cloud-init
+
+
+outputs:
+  instance_name:
+    description: Name of the instance.
+    value: { get_attr: [ server, name ] }
+  instance_ip:
+    description: IP address of the instance.
+    value: { get_attr: [ server, first_address ] }

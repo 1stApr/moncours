@@ -1,0 +1,38 @@
+[DEFAULT]
+log_dir = <%= @logs_dir %>/<%= @service %>
+
+
+[api]
+auth_strategy = keystone
+
+
+[cors]
+allowed_origin = http://<%= @management_ip %>
+
+
+[keystone_authtoken]
+#cafile = /opt/stack/data/ca-bundle.pem
+project_domain_name = Default
+user_domain_name = Default
+www_authenticate_uri = http://<%= @management_ip %>/identity
+auth_url = http://<%= @management_ip %>/identity
+memcached_servers = <%= @memcached_ip %>:11211
+auth_type = password
+project_name = service
+username = <%= @service %>
+password = <%= @password %>
+region_name = <%= @region %>
+service_token_roles_required = True
+
+
+[oslo_policy]
+[placement]
+
+
+[placement_database]
+connection = mysql+pymysql://<%= @service %>:<%= @password %>@<%= @dbhost %>/<%= @service %>?charset=utf8
+
+
+[profiler]
+#filter_error_trace = false
+

@@ -1,0 +1,32 @@
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+<% @members.each do | member | -%>
+    <%= member %>:
+      dhcp4: no
+      dhcp6: no
+<% end -%>
+  bridges:
+    br-ex:
+<% if @members.size == 1 -%>
+      macaddress: <%= scope.lookupvar("macaddress_#{ @members[0] }") %>
+<% end -%>
+      interfaces: [<% @members.each_with_index do | (member), idx | %><%= member %><% if idx < @members.length - 1 -%>,<% end -%><% end -%>]
+      addresses: [<%= @ip %>]
+<% if defined?(@gw) -%>
+      gateway4: <%= @gw %>
+<% end -%>
+<% if defined?(@mtu) -%>
+      mtu: <%= @mtu %>
+<% end -%>      
+<% if defined?(@dns) -%>
+      nameservers:
+        addresses: [<%= @dns %>]
+<% end -%>      
+      dhcp4: no
+      dhcp6: no
+#      parameters:
+#        stp: no
+
+

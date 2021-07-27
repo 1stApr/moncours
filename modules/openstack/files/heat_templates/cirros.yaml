@@ -1,0 +1,28 @@
+heat_template_version: 2018-08-31
+description: Launch a basic instance with CirrOS image using the
+             ``tiny`` flavor, ``mykey`` key,  and one network.
+
+
+parameters:
+  port_name:
+    type: string
+    description: Network port for attaching to VM
+
+
+resources:
+  server:
+    type: OS::Nova::Server
+    properties:
+      image: cirros-0.4.0-x86_64
+      flavor: tiny
+      networks:
+        - port: { get_param: port_name }
+
+
+outputs:
+  instance_name:
+    description: Name of the instance.
+    value: { get_attr: [ server, name ] }
+  instance_ip:
+    description: IP address of the instance.
+    value: { get_attr: [ server, first_address ] }

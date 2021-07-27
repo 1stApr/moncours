@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+#
+# source openrc [username] [projectname]
+
+if [[ -n "$1" ]]; then
+    OS_USERNAME=$1
+fi
+if [[ -n "$2" ]]; then
+    OS_PROJECT_NAME=$2
+fi
+
+export OS_USERNAME=${OS_USERNAME:-admin}
+export OS_PASSWORD=<%= @password %>
+export OS_AUTH_TYPE=password
+export OS_REGION_NAME=<%= @region %>
+export OS_PROJECT_NAME=${OS_PROJECT_NAME:-<%= @project %>}
+export OS_TENANT_NAME=$OS_PROJECT_NAME
+export OS_USER_DOMAIN_NAME=Default
+export OS_PROJECT_DOMAIN_NAME=Default
+export OS_AUTH_URL=http://<%= @management_ip %>/identity
+export OS_IDENTITY_API_VERSION=3
